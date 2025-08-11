@@ -13,7 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
 import { Public } from "../../decorators/public.decorator";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Comment } from "./Comment";
 import { CommentCountArgs } from "./CommentCountArgs";
 import { CommentFindManyArgs } from "./CommentFindManyArgs";
@@ -23,10 +28,16 @@ import { UpdateCommentArgs } from "./UpdateCommentArgs";
 import { DeleteCommentArgs } from "./DeleteCommentArgs";
 import { Post } from "../../post/base/Post";
 import { CommentService } from "../comment.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => Comment)
 export class CommentResolverBase {
-  constructor(protected readonly service: CommentService) {}
+  constructor(
+    protected readonly service: CommentService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @Public()
+  @graphql.Query(() => MetaQueryPayload)
   async _commentsMeta(
     @graphql.Args() args: CommentCountArgs
   ): Promise<MetaQueryPayload> {
@@ -75,7 +86,13 @@ export class CommentResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Comment)
+  @nestAccessControl.UseRoles({
+    resource: "Comment",
+    action: "update",
+    possession: "any",
+  })
   async updateComment(
     @graphql.Args() args: UpdateCommentArgs
   ): Promise<Comment | null> {
@@ -103,6 +120,11 @@ export class CommentResolverBase {
   }
 
   @graphql.Mutation(() => Comment)
+  @nestAccessControl.UseRoles({
+    resource: "Comment",
+    action: "delete",
+    possession: "any",
+  })
   async deleteComment(
     @graphql.Args() args: DeleteCommentArgs
   ): Promise<Comment | null> {

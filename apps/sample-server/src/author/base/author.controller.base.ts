@@ -16,7 +16,10 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { AuthorService } from "../author.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Public } from "../../decorators/public.decorator";
 import { AuthorCreateInput } from "./AuthorCreateInput";
 import { Author } from "./Author";
@@ -27,10 +30,27 @@ import { AuthorUpdateInput } from "./AuthorUpdateInput";
 import { PostFindManyArgs } from "../../post/base/PostFindManyArgs";
 import { PostWhereUniqueInput } from "../../post/base/PostWhereUniqueInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class AuthorControllerBase {
-  constructor(protected readonly service: AuthorService) {}
+  constructor(
+    protected readonly service: AuthorService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: Author })
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: AuthorCreateInput,
+  })
   async createAuthor(@common.Body() data: AuthorCreateInput): Promise<Author> {
     return await this.service.createAuthor({
       data: data,
@@ -48,6 +68,9 @@ export class AuthorControllerBase {
   @common.Get()
   @swagger.ApiOkResponse({ type: [Author] })
   @ApiNestedQuery(AuthorFindManyArgs)
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async authors(@common.Req() request: Request): Promise<Author[]> {
     const args = plainToClass(AuthorFindManyArgs, request.query);
     return this.service.authors({
@@ -66,6 +89,9 @@ export class AuthorControllerBase {
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: Author })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async author(
     @common.Param() params: AuthorWhereUniqueInput
   ): Promise<Author | null> {
@@ -87,9 +113,21 @@ export class AuthorControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: Author })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: AuthorUpdateInput,
+  })
   async updateAuthor(
     @common.Param() params: AuthorWhereUniqueInput,
     @common.Body() data: AuthorUpdateInput
@@ -119,6 +157,14 @@ export class AuthorControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: Author })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteAuthor(
     @common.Param() params: AuthorWhereUniqueInput
   ): Promise<Author | null> {
@@ -185,6 +231,11 @@ export class AuthorControllerBase {
   }
 
   @common.Post("/:id/post")
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "update",
+    possession: "any",
+  })
   async connectPost(
     @common.Param() params: AuthorWhereUniqueInput,
     @common.Body() body: PostWhereUniqueInput[]
@@ -202,6 +253,11 @@ export class AuthorControllerBase {
   }
 
   @common.Patch("/:id/post")
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "update",
+    possession: "any",
+  })
   async updatePost(
     @common.Param() params: AuthorWhereUniqueInput,
     @common.Body() body: PostWhereUniqueInput[]
@@ -219,6 +275,11 @@ export class AuthorControllerBase {
   }
 
   @common.Delete("/:id/post")
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "update",
+    possession: "any",
+  })
   async disconnectPost(
     @common.Param() params: AuthorWhereUniqueInput,
     @common.Body() body: PostWhereUniqueInput[]

@@ -16,8 +16,11 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { CommentService } from "../comment.service";
 import { Public } from "../../decorators/public.decorator";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { CommentCreateInput } from "./CommentCreateInput";
 import { Comment } from "./Comment";
 import { Post } from "../../post/base/Post";
@@ -25,11 +28,22 @@ import { CommentFindManyArgs } from "./CommentFindManyArgs";
 import { CommentWhereUniqueInput } from "./CommentWhereUniqueInput";
 import { CommentUpdateInput } from "./CommentUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class CommentControllerBase {
-  constructor(protected readonly service: CommentService) {}
+  constructor(
+    protected readonly service: CommentService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
   @Public()
   @common.Post()
   @swagger.ApiCreatedResponse({ type: Comment })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: CommentCreateInput,
+  })
   async createComment(
     @common.Body() data: CommentCreateInput
   ): Promise<Comment> {
@@ -63,6 +77,9 @@ export class CommentControllerBase {
   @common.Get()
   @swagger.ApiOkResponse({ type: [Comment] })
   @ApiNestedQuery(CommentFindManyArgs)
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async comments(@common.Req() request: Request): Promise<Comment[]> {
     const args = plainToClass(CommentFindManyArgs, request.query);
     return this.service.comments({
@@ -87,6 +104,9 @@ export class CommentControllerBase {
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: Comment })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async comment(
     @common.Param() params: CommentWhereUniqueInput
   ): Promise<Comment | null> {
@@ -114,9 +134,21 @@ export class CommentControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: Comment })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Comment",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: CommentUpdateInput,
+  })
   async updateComment(
     @common.Param() params: CommentWhereUniqueInput,
     @common.Body() data: CommentUpdateInput
@@ -160,6 +192,14 @@ export class CommentControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: Comment })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Comment",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteComment(
     @common.Param() params: CommentWhereUniqueInput
   ): Promise<Comment | null> {

@@ -1,0 +1,134 @@
+[
+  {
+    "role": "editor",
+    "resource": "Post",
+    "action": "create:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "Post",
+    "action": "update:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "Post",
+    "action": "delete:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "Comment",
+    "action": "delete:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "Author",
+    "action": "create:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "Author",
+    "action": "update:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "Author",
+    "action": "delete:any",
+    "attributes": "*"
+  },
+  {
+    "role": "admin",
+    "resource": "User",
+    "action": "read:own",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "User",
+    "action": "read:own",
+    "attributes": "*"
+  },
+  {
+    "role": "user",
+    "resource": "User",
+    "action": "read:own",
+    "attributes": "*"
+  },
+  {
+    "role": "admin",
+    "resource": "User",
+    "action": "create:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "User",
+    "action": "create:any",
+    "attributes": "*"
+  },
+  {
+    "role": "user",
+    "resource": "User",
+    "action": "create:any",
+    "attributes": "*"
+  },
+  {
+    "role": "admin",
+    "resource": "User",
+    "action": "update:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "User",
+    "action": "update:any",
+    "attributes": "*"
+  },
+  {
+    "role": "user",
+    "resource": "User",
+    "action": "update:any",
+    "attributes": "*"
+  },
+  {
+    "role": "admin",
+    "resource": "User",
+    "action": "delete:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "User",
+    "action": "delete:any",
+    "attributes": "*"
+  },
+  {
+    "role": "user",
+    "resource": "User",
+    "action": "delete:any",
+    "attributes": "*"
+  },
+  {
+    "role": "admin",
+    "resource": "User",
+    "action": "read:any",
+    "attributes": "*"
+  },
+  {
+    "role": "editor",
+    "resource": "User",
+    "action": "read:any",
+    "attributes": "*"
+  },
+  {
+    "role": "user",
+    "resource": "User",
+    "action": "read:any",
+    "attributes": "*"
+  }
+]
