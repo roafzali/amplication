@@ -13,7 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
 import { Public } from "../../decorators/public.decorator";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Author } from "./Author";
 import { AuthorCountArgs } from "./AuthorCountArgs";
 import { AuthorFindManyArgs } from "./AuthorFindManyArgs";
@@ -24,10 +29,16 @@ import { DeleteAuthorArgs } from "./DeleteAuthorArgs";
 import { PostFindManyArgs } from "../../post/base/PostFindManyArgs";
 import { Post } from "../../post/base/Post";
 import { AuthorService } from "../author.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => Author)
 export class AuthorResolverBase {
-  constructor(protected readonly service: AuthorService) {}
+  constructor(
+    protected readonly service: AuthorService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @Public()
+  @graphql.Query(() => MetaQueryPayload)
   async _authorsMeta(
     @graphql.Args() args: AuthorCountArgs
   ): Promise<MetaQueryPayload> {
@@ -55,7 +66,13 @@ export class AuthorResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Author)
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "create",
+    possession: "any",
+  })
   async createAuthor(@graphql.Args() args: CreateAuthorArgs): Promise<Author> {
     return await this.service.createAuthor({
       ...args,
@@ -63,7 +80,13 @@ export class AuthorResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Author)
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "update",
+    possession: "any",
+  })
   async updateAuthor(
     @graphql.Args() args: UpdateAuthorArgs
   ): Promise<Author | null> {
@@ -83,6 +106,11 @@ export class AuthorResolverBase {
   }
 
   @graphql.Mutation(() => Author)
+  @nestAccessControl.UseRoles({
+    resource: "Author",
+    action: "delete",
+    possession: "any",
+  })
   async deleteAuthor(
     @graphql.Args() args: DeleteAuthorArgs
   ): Promise<Author | null> {

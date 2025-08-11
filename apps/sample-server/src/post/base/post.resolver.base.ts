@@ -13,7 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
 import { Public } from "../../decorators/public.decorator";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Post } from "./Post";
 import { PostCountArgs } from "./PostCountArgs";
 import { PostFindManyArgs } from "./PostFindManyArgs";
@@ -24,10 +29,16 @@ import { DeletePostArgs } from "./DeletePostArgs";
 import { Author } from "../../author/base/Author";
 import { Comment } from "../../comment/base/Comment";
 import { PostService } from "../post.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => Post)
 export class PostResolverBase {
-  constructor(protected readonly service: PostService) {}
+  constructor(
+    protected readonly service: PostService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @Public()
+  @graphql.Query(() => MetaQueryPayload)
   async _postsMeta(
     @graphql.Args() args: PostCountArgs
   ): Promise<MetaQueryPayload> {
@@ -53,7 +64,13 @@ export class PostResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Post)
+  @nestAccessControl.UseRoles({
+    resource: "Post",
+    action: "create",
+    possession: "any",
+  })
   async createPost(@graphql.Args() args: CreatePostArgs): Promise<Post> {
     return await this.service.createPost({
       ...args,
@@ -75,7 +92,13 @@ export class PostResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Post)
+  @nestAccessControl.UseRoles({
+    resource: "Post",
+    action: "update",
+    possession: "any",
+  })
   async updatePost(@graphql.Args() args: UpdatePostArgs): Promise<Post | null> {
     try {
       return await this.service.updatePost({
@@ -107,6 +130,11 @@ export class PostResolverBase {
   }
 
   @graphql.Mutation(() => Post)
+  @nestAccessControl.UseRoles({
+    resource: "Post",
+    action: "delete",
+    possession: "any",
+  })
   async deletePost(@graphql.Args() args: DeletePostArgs): Promise<Post | null> {
     try {
       return await this.service.deletePost(args);
